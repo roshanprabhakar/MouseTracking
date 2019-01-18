@@ -7,10 +7,27 @@ public class MouseTracking implements PixelFilter {
     private Point centerOfMouse;
     private ArrayList<Point> centers = new ArrayList<>();
     private short[][] bwpixels;
+    private DataSet mouse = new DataSet();
 
     @Override
     public DImage processImage(DImage img) {
+        outlineMouse(img);
+        return img;
+    }
+
+    private void findMouse(short[][] bwpixels) { //run this right after you run color mask
+        for (int r = 0; r < bwpixels.length; r++) {
+            for (int c = 0; c < bwpixels[r].length; c++) {
+                if (bwpixels[r][c] == 255) {
+                    mouse.add(new Point(c, r));
+                }
+            }
+        }
+    }
+
+    public void outlineMouse(DImage img) {
         short[][] bwpixels = applyColorThreshholding(img, 102);
+        findMouse(bwpixels);
         Point center = new Point(308, 241);
         double radius = 202;
         applyRadiusFilter(bwpixels, center, radius);
@@ -18,10 +35,9 @@ public class MouseTracking implements PixelFilter {
         centerOfMouse = centerOfMouse(bwpixels);
         centers.add(centerOfMouse);
         img.setPixels(bwpixels);
-        return img;
     }
 
-    private Point centerOfMouse(short[][] bwpixels) {
+    public Point centerOfMouse(short[][] bwpixels) {
         int sumRow = 0;
         int sumCol = 0;
         int count = 0;
@@ -76,4 +92,38 @@ public class MouseTracking implements PixelFilter {
 
         window.ellipse(centerOfMouse.getX(), centerOfMouse.getY(), 5, 5);
     }
+
+
+    //DATA COLLECTOR API
+//    private Point locationAtTime(int t) {
+//
+//    }
+//
+//    private double speedAtTimeT(int t) {
+//
+//    }
+//
+//    private double averageSpeed(int tstart, int tend) {
+//
+//    }
+//
+//    private double distanceFromWall(int t) {
+//
+//    }
+//
+//    private double totalDistanceTraveled() {
+//
+//    }
+//
+//    private int timeSpentAtSpeed(double cmpers) {
+//
+//    }
+//
+//    private int timeSpentInRegion(Cluster regionOfInterst) {
+//
+//    }
+//
+//    private int ArrayList<TimeCode> timeSpentAtSpeed(double speed) {
+//
+//    }
 }
