@@ -4,14 +4,34 @@ import java.util.ArrayList;
 
 public class MouseTracking implements PixelFilter {
 
+    int ppcm;
+    int fps;
+    int framesPassed = 0;
+    int totalTimePassed = 0;
+    private ArrayList<Point> centers = new ArrayList<>(); //each frame adds a center; indexes same as frame sequence
+    private ArrayList<Double> times = new ArrayList<>();
+
     private Point centerOfMouse;
-    private ArrayList<Point> centers = new ArrayList<>();
+    Point centerOfField = new Point(308, 241);
+
     private short[][] bwpixels;
     private DataSet mouse = new DataSet();
 
+    public void setFps(int fps) {
+        this.fps = fps;
+    }
+
+    public void setPpcm(int ppcm) {
+        this.ppcm = ppcm;
+    }
+
     @Override
     public DImage processImage(DImage img) {
+        long startTime = System.currentTimeMillis();
         outlineMouse(img);
+        framesPassed++;
+        long endTime = System.currentTimeMillis();
+        totalTimePassed += endTime - startTime;
         return img;
     }
 
@@ -26,15 +46,18 @@ public class MouseTracking implements PixelFilter {
     }
 
     public void outlineMouse(DImage img) {
+        long start = System.currentTimeMillis();
         short[][] bwpixels = applyColorThreshholding(img, 102);
         findMouse(bwpixels);
-        Point center = new Point(308, 241);
         double radius = 202;
-        applyRadiusFilter(bwpixels, center, radius);
+        applyRadiusFilter(bwpixels, centerOfField, radius);
         this.bwpixels = bwpixels;
         centerOfMouse = centerOfMouse(bwpixels);
         centers.add(centerOfMouse);
         img.setPixels(bwpixels);
+        mouse.clear();
+        long end = System.currentTimeMillis();
+        times.add((double)end - start);
     }
 
     public Point centerOfMouse(short[][] bwpixels) {
@@ -93,36 +116,60 @@ public class MouseTracking implements PixelFilter {
         window.ellipse(centerOfMouse.getX(), centerOfMouse.getY(), 5, 5);
     }
 
+    private Point locationAtTime(int t) {
+        return centers.get(fps * t);
+    }
 
-    //DATA COLLECTOR API
-//    private Point locationAtTime(int t) {
+    private double speedAtTime(int t) {
+        int framesIndex = fps * t;
+        return distanceBetween(framesIndex, framesIndex - 1);
+    }
+
+    private double averageSpeed(int tstart, int tend) {
+        int startIndex = tstart * fps;
+        int endIndex = tend * fps;
+        double totalDistance = 0;
+        double totalTime = 0;
+        for (int i = startIndex + 1; i < endIndex; i++) {
+            totalDistance += distanceBetween(i, i - 1);
+            totalTime += times.get(i);
+        }
+        return totalDistance / totalTime;
+    }
+
+    private double distanceFromWall(int t) {
+        int index = fps * t;
+        return centers.get(index).distanceTo(centerOfField);
+    }
+
+    private double totalDistanceTraveled() { //make distance a class variable
+        double totalDistance = 0;
+        for (int i = 1; i < centers.size(); i++) {
+            totalDistance += distanceBetween(i, i - 1);
+        }
+        return totalDistance;
+    }
+
+    private double timeSpentAtSpeed(double speed) {
+        double totalTime = 0;
+        for (int i = 1; i < centers.size(); i++) {
+            if (Math.abs(distanceBetween(i, i - 1) / times.get(i) - speed) < 0.5) {
+                totalTime += times.get(i);
+            }
+        }
+        return totalTime;
+    }
+
+//    private int timeSpentInRegion(DataSet regionOfInterst) {
+//        for (int i = 0; i < centers.size(); i++) {
 //
+//        }
 //    }
-//
-//    private double speedAtTimeT(int t) {
-//
-//    }
-//
-//    private double averageSpeed(int tstart, int tend) {
-//
-//    }
-//
-//    private double distanceFromWall(int t) {
-//
-//    }
-//
-//    private double totalDistanceTraveled() {
-//
-//    }
-//
-//    private int timeSpentAtSpeed(double cmpers) {
-//
-//    }
-//
-//    private int timeSpentInRegion(Cluster regionOfInterst) {
-//
-//    }
-//
+
+    private double distanceBetween(int index1, int index2) {
+        return centers.get(index1).distanceTo(centers.get(index2));
+    }
+
 //    private int ArrayList<TimeCode> timeSpentAtSpeed(double speed) {
 //
 //    }

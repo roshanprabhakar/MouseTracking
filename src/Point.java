@@ -39,4 +39,9 @@ public class Point {
         int otherSegment = (this.y - other.y) * (this.y - other.y);
         return Math.sqrt(oneSegment + otherSegment);
     }
+
+    public boolean equals(Point other) {
+        if (this.x == other.getX() && this.y == other.getY()) return true;
+        return false;
+    }
 }
