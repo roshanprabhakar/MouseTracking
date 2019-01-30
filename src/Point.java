@@ -44,4 +44,8 @@ public class Point {
         if (this.x == other.getX() && this.y == other.getY()) return true;
         return false;
     }
+
+    public Point clone() {
+        return new Point(this.x, this.y);
+    }
 }
